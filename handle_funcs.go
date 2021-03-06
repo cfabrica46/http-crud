@@ -17,7 +17,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 func findUser(w http.ResponseWriter, r *http.Request) {
 
-	u := getUser(w, r, "find")
+	u := getUser(w, r, find)
 
 	err := json.NewEncoder(w).Encode(u)
 
@@ -107,7 +107,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
 
-	u := getUser(w, r, "delete")
+	u := getUser(w, r, delete)
 
 	for i := range users {
 

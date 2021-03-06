@@ -73,11 +73,11 @@ func addHandleFuncs(id int) {
 
 }
 
-func getUser(w http.ResponseWriter, r *http.Request, handle string) (u user) {
+func getUser(w http.ResponseWriter, r *http.Request, handle p) (u user) {
 
 	var check bool
 	switch handle {
-	case "find":
+	case find:
 		idString := getIDFromURLFindUser(w, r)
 
 		id, err := strconv.Atoi(idString)
@@ -105,7 +105,7 @@ func getUser(w http.ResponseWriter, r *http.Request, handle string) (u user) {
 		}
 		return
 
-	case "delete":
+	case delete:
 
 		idString := getIDFromURLDeleteUser(w, r)
 

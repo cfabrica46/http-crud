@@ -10,6 +10,13 @@ type user struct {
 	Username, Password string
 }
 
+type p int
+
+const (
+	find   p = 1
+	delete p = 2
+)
+
 var users = []user{
 	{
 		ID:       1,
