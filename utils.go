@@ -20,6 +20,10 @@ func executeAllHandleFuncs() {
 
 		http.HandleFunc(routeDeleteUser, deleteUser)
 
+		routeUpdateUser := fmt.Sprintf("/user/update/%s", id)
+
+		http.HandleFunc(routeUpdateUser, updateUser)
+
 	}
 
 }
@@ -32,7 +36,17 @@ func getIDFromURLFindUser(w http.ResponseWriter, r *http.Request) (id string) {
 	return
 
 }
+
 func getIDFromURLDeleteUser(w http.ResponseWriter, r *http.Request) (id string) {
+
+	url := []byte(r.URL.Path)
+	id = fmt.Sprintf("%s", url[13:])
+
+	return
+
+}
+
+func getIDFromURLUpdateUser(w http.ResponseWriter, r *http.Request) (id string) {
 
 	url := []byte(r.URL.Path)
 	id = fmt.Sprintf("%s", url[13:])
@@ -52,6 +66,10 @@ func addHandleFuncs(id int) {
 	routeDeleteUser := fmt.Sprintf("/user/delete/%s", idString)
 
 	http.HandleFunc(routeDeleteUser, deleteUser)
+
+	routeUpdateUser := fmt.Sprintf("/user/update/%s", idString)
+
+	http.HandleFunc(routeUpdateUser, updateUser)
 
 }
 

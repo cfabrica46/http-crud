@@ -121,3 +121,64 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "SE ELIMINO EL USUARIO")
 
 }
+
+func updateUser(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		t, err := template.ParseFiles("update_user.html")
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		err = t.Execute(w, nil)
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+	case "POST":
+
+		var u user
+
+		url := []byte(r.URL.Path)
+		idString := fmt.Sprintf("%s", url[13:])
+
+		id, err := strconv.Atoi(idString)
+
+		err = r.ParseForm()
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		username := r.Form.Get("username")
+		password := r.Form.Get("password")
+
+		if username == "" || password == "" {
+			http.Error(w, http.StatusText(400), 400)
+		}
+
+		for i := range users {
+
+			if users[i].ID == id {
+
+				users[i].Username = username
+				users[i].Password = password
+				u = users[i]
+				break
+			}
+
+		}
+
+		fmt.Fprintf(w, "SE ACTUALIZO TUS DATOS:\n")
+
+		json.NewEncoder(w).Encode(u)
+
+	}
+
+}
