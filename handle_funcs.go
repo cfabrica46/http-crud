@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,39 +12,64 @@ import (
 
 func index(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Fprint(w, "BIENVENIDOS :D")
+	if r.Method == "GET" {
 
+		t, err := template.ParseFiles("./templates/index.html")
+
+		if err != nil {
+			log.Fatal(err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		err = t.Execute(w, nil)
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+	}
 }
 
 func findUser(w http.ResponseWriter, r *http.Request) {
 
-	u := getUser(w, r, find)
+	if r.Method == "GET" {
 
-	err := json.NewEncoder(w).Encode(u)
+		u, err := getUser(w, r.URL.Query())
 
-	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
-		return
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			return
+		}
+
+		fmt.Fprintf(w, "Usuario: %s\n", u.Username)
+
+		err = json.NewEncoder(w).Encode(u)
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
-
 }
 
 func findUsers(w http.ResponseWriter, r *http.Request) {
 
-	err := json.NewEncoder(w).Encode(users)
+	if r.Method == "GET" {
+		err := json.NewEncoder(w).Encode(users)
 
-	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
-		return
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
-
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		t, err := template.ParseFiles("create_user.html")
+		t, err := template.ParseFiles("./templates/create_user.html")
 
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
@@ -77,6 +103,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 		if username == "" || password == "" {
 			http.Error(w, http.StatusText(400), 400)
+			return
 		}
 
 		for i := range users {
@@ -99,26 +126,53 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		go addHandleFuncs(id)
-
 	}
 
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
 
-	u := getUser(w, r, delete)
+	if r.Method == "GET" {
 
-	for i := range users {
+		u, err := getUser(w, r.URL.Query())
 
-		if u.ID == users[i].ID {
-
-			users = append(users[:i], users[i+1:]...)
-			break
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			return
 		}
 
+		if len(users) < 1 {
+
+			users = []user{}
+
+			fmt.Fprintf(w, "Se Elimino El Usuario:\n")
+
+			err := json.NewEncoder(w).Encode(u)
+
+			if err != nil {
+				http.Error(w, http.StatusText(500), 500)
+				return
+			}
+			return
+
+		}
+
+		for i := range users {
+			if users[i] == u {
+				users = append(users[:i], users[i+1:]...)
+				break
+			}
+		}
+
+		fmt.Fprintf(w, "Se Elimino El Usuario:\n")
+
+		err = json.NewEncoder(w).Encode(u)
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
-	fmt.Fprint(w, "SE ELIMINO EL USUARIO")
 
 }
 
@@ -126,59 +180,74 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		t, err := template.ParseFiles("update_user.html")
+
+		u, err := getUser(w, r.URL.Query())
+
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), 400)
+			return
+		}
+
+		t, err := template.ParseFiles("./templates/update_user.html")
 
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 
-		err = t.Execute(w, nil)
+		err = t.Execute(w, u.ID)
 
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-
 	case "POST":
 
 		var u user
 
-		url := []byte(r.URL.Path)
-		idString := fmt.Sprintf("%s", url[13:])
-
-		id, err := strconv.Atoi(idString)
-
-		err = r.ParseForm()
+		err := r.ParseForm()
 
 		if err != nil {
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 
+		id := r.Form.Get("id")
 		username := r.Form.Get("username")
 		password := r.Form.Get("password")
 
 		if username == "" || password == "" {
-			http.Error(w, http.StatusText(400), 400)
+			http.Error(w, http.StatusText(http.StatusNotAcceptable), 400)
+			return
 		}
+
+		iD, err := strconv.Atoi(id)
+
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		u.ID = iD
+		u.Username = username
+		u.Password = password
 
 		for i := range users {
 
-			if users[i].ID == id {
-
-				users[i].Username = username
-				users[i].Password = password
-				u = users[i]
-				break
+			if users[i].ID == u.ID {
+				users[i] = u
 			}
 
 		}
 
-		fmt.Fprintf(w, "SE ACTUALIZO TUS DATOS:\n")
+		fmt.Fprintf(w, "Se actualizaron los datos\n")
 
-		json.NewEncoder(w).Encode(u)
+		err = json.NewEncoder(w).Encode(u)
 
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
 	}
 
 }

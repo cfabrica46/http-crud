@@ -10,13 +10,6 @@ type user struct {
 	Username, Password string
 }
 
-type p int
-
-const (
-	find   p = 1
-	delete p = 2
-)
-
 var users = []user{
 	{
 		ID:       1,
@@ -34,11 +27,15 @@ func main() {
 
 	http.HandleFunc("/", index)
 
-	executeAllHandleFuncs()
+	http.HandleFunc("/users/one", findUser)
 
 	http.HandleFunc("/users/all", findUsers)
 
 	http.HandleFunc("/user/create", createUser)
+
+	http.HandleFunc("/user/delete", deleteUser)
+
+	http.HandleFunc("/user/update", updateUser)
 
 	err := http.ListenAndServe(":8080", nil)
 

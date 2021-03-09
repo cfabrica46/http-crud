@@ -1,137 +1,52 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
-func executeAllHandleFuncs() {
+func parseID(w http.ResponseWriter, r url.Values) (key int, err error) {
 
-	for i := range users {
+	keys, ok := r["id"]
 
-		id := strconv.Itoa(users[i].ID)
+	if !ok || len(keys) != 1 {
 
-		routeFindUser := fmt.Sprintf("/users/%s", id)
+		err = http.ErrAbortHandler
 
-		http.HandleFunc(routeFindUser, findUser)
-
-		routeDeleteUser := fmt.Sprintf("/user/delete/%s", id)
-
-		http.HandleFunc(routeDeleteUser, deleteUser)
-
-		routeUpdateUser := fmt.Sprintf("/user/update/%s", id)
-
-		http.HandleFunc(routeUpdateUser, updateUser)
+		return
 
 	}
 
-}
+	key, err = strconv.Atoi(keys[0])
 
-func getIDFromURLFindUser(w http.ResponseWriter, r *http.Request) (id string) {
+	if err != nil {
 
-	url := []byte(r.URL.Path)
-	id = fmt.Sprintf("%s", url[7:])
-
-	return
-
-}
-
-func getIDFromURLDeleteUser(w http.ResponseWriter, r *http.Request) (id string) {
-
-	url := []byte(r.URL.Path)
-	id = fmt.Sprintf("%s", url[13:])
+		return
+	}
 
 	return
-
 }
 
-func getIDFromURLUpdateUser(w http.ResponseWriter, r *http.Request) (id string) {
-
-	url := []byte(r.URL.Path)
-	id = fmt.Sprintf("%s", url[13:])
-
-	return
-
-}
-
-func addHandleFuncs(id int) {
-
-	idString := strconv.Itoa(id)
-
-	routeFindUser := fmt.Sprintf("/users/%s", idString)
-
-	http.HandleFunc(routeFindUser, findUser)
-
-	routeDeleteUser := fmt.Sprintf("/user/delete/%s", idString)
-
-	http.HandleFunc(routeDeleteUser, deleteUser)
-
-	routeUpdateUser := fmt.Sprintf("/user/update/%s", idString)
-
-	http.HandleFunc(routeUpdateUser, updateUser)
-
-}
-
-func getUser(w http.ResponseWriter, r *http.Request, handle p) (u user) {
+func getUser(w http.ResponseWriter, r url.Values) (u user, err error) {
 
 	var check bool
-	switch handle {
-	case find:
-		idString := getIDFromURLFindUser(w, r)
 
-		id, err := strconv.Atoi(idString)
+	key, err := parseID(w, r)
 
-		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
-			return
+	for i := range users {
+
+		if users[i].ID == key {
+
+			check = true
+			u = users[i]
+			break
 		}
 
-		for i := range users {
+	}
 
-			if users[i].ID == id {
-
-				u = users[i]
-				check = true
-				break
-
-			}
-
-		}
-
-		if check == false {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-		return
-
-	case delete:
-
-		idString := getIDFromURLDeleteUser(w, r)
-
-		id, err := strconv.Atoi(idString)
-
-		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
-			return
-		}
-
-		for i := range users {
-
-			if users[i].ID == id {
-
-				u = users[i]
-				check = true
-				break
-
-			}
-
-		}
-
-		if check == false {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
+	if check == false {
+		err = http.ErrAbortHandler
 		return
 	}
 	return
