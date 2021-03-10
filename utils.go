@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func parseID(w http.ResponseWriter, r url.Values) (key int, err error) {
+func parseID(r url.Values) (key int, err error) {
 
 	keys, ok := r["id"]
 
@@ -28,7 +28,7 @@ func parseID(w http.ResponseWriter, r url.Values) (key int, err error) {
 	return
 }
 
-func getUser(w http.ResponseWriter, r url.Values) (u user, err error) {
+func getUser(r url.Values) (u user, err error) {
 
 	var check bool
 

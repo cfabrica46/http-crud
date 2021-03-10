@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -18,14 +17,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			log.Fatal(err)
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
 		err = t.Execute(w, nil)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	}
@@ -35,19 +34,17 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		u, err := getUser(w, r.URL.Query())
+		u, err := getUser(r.URL.Query())
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusNotFound), 400)
 			return
 		}
 
-		fmt.Fprintf(w, "Usuario: %s\n", u.Username)
-
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	}
@@ -59,7 +56,7 @@ func findUsers(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(users)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	}
@@ -72,14 +69,14 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("./templates/create_user.html")
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
 		err = t.Execute(w, nil)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
@@ -94,7 +91,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		err = r.ParseForm()
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
@@ -102,7 +99,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		password := r.Form.Get("password")
 
 		if username == "" || password == "" {
-			http.Error(w, http.StatusText(400), 400)
+			http.Error(w, http.StatusText(http.StatusNotAcceptable), 400)
 			return
 		}
 
@@ -115,8 +112,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		users = append(users, user{ID: id, Username: username, Password: password})
-
-		fmt.Fprintf(w, "SE AGREGO UN NUEVO USUARIO:\n")
 
 		for i := range users {
 
@@ -134,7 +129,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 
-		u, err := getUser(w, r.URL.Query())
+		u, err := getUser(r.URL.Query())
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusNotFound), 400)
@@ -145,31 +140,20 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 
 			users = []user{}
 
-			fmt.Fprintf(w, "Se Elimino El Usuario:\n")
+		} else {
 
-			err := json.NewEncoder(w).Encode(u)
-
-			if err != nil {
-				http.Error(w, http.StatusText(500), 500)
-				return
-			}
-			return
-
-		}
-
-		for i := range users {
-			if users[i] == u {
-				users = append(users[:i], users[i+1:]...)
-				break
+			for i := range users {
+				if users[i] == u {
+					users = append(users[:i], users[i+1:]...)
+					break
+				}
 			}
 		}
-
-		fmt.Fprintf(w, "Se Elimino El Usuario:\n")
 
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	}
@@ -181,7 +165,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 
-		u, err := getUser(w, r.URL.Query())
+		u, err := getUser(r.URL.Query())
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusNotFound), 400)
@@ -191,14 +175,14 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("./templates/update_user.html")
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
 		err = t.Execute(w, u.ID)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	case "POST":
@@ -208,7 +192,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
@@ -224,7 +208,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		iD, err := strconv.Atoi(id)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 
@@ -240,12 +224,10 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 		}
 
-		fmt.Fprintf(w, "Se actualizaron los datos\n")
-
 		err = json.NewEncoder(w).Encode(u)
 
 		if err != nil {
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), 500)
 			return
 		}
 	}
