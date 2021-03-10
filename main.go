@@ -27,6 +27,10 @@ func main() {
 
 	http.HandleFunc("/", index)
 
+	fileServer := http.FileServer(http.Dir("./images"))
+
+	http.Handle("/images/", http.StripPrefix("/images", fileServer))
+
 	http.HandleFunc("/users/one", findUser)
 
 	http.HandleFunc("/users/all", findUsers)
