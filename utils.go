@@ -32,7 +32,7 @@ func getUser(r url.Values) (u user, err error) {
 
 	var check bool
 
-	key, err := parseID(w, r)
+	key, err := parseID(r)
 
 	for i := range users {
 
